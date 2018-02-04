@@ -14,11 +14,19 @@ Y = zeros(number_of_intervals, 1);
 
 index = 1;
 
+filename = 'data/SzPrediction_answer_key.csv';
+delimiter = ',';
+startRow = 2;
+
+formatSpec = '%s%f%[^\n\r]';
+fileID = fopen(filename,'r');
+dataArray = textscan(fileID, formatSpec, 'Delimiter', delimiter, 'TextType', 'string', 'EmptyValue', NaN, 'HeaderLines' ,startRow-1, 'ReturnOnError', false, 'EndOfLine', '\r\n');
+
+fclose(fileID);
+SzPredictionanswerkey = table(dataArray{1:end-1}, 'VariableNames', {'clip','preictal'});
+
 for i=1:number_of_files
     file = files(i);
-    if contains(file.name, "test")
-        break;
-    end
     loadedFile = load("data/" + file.name);
     fields = fieldnames(loadedFile);
     field = fields{1};
@@ -41,18 +49,21 @@ for i=1:number_of_files
             X(index, feature_index) = bandpower(A(channel,:,j),fs,[70,128]);
             feature_index = feature_index + 1;
         end
-        if contains(file.name, "interictal")
+        if contains(file.name, 'interictal')
             Y(index) = 0;
-        elseif contains(file.name, "preictal")
+        elseif contains(file.name, 'preictal')
             Y(index) = 1;
+        elseif contains(file.name, 'test')
+            Y(index) = SzPredictionanswerkey{contains(SzPredictionanswerkey.clip, file.name),{'preictal'}};
         end
 
         index = index + 1;
         
     end
 end
-save('X.mat', 'X');
-save('Y.mat', 'Y');
+mkdir('out');
+save('out/X.mat', 'X');
+save('out/Y.mat', 'Y');
 
     
 
